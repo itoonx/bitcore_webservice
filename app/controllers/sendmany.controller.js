@@ -76,6 +76,13 @@ exports.sendmany = function(req, res) {
         fee_per_kb = config.fee_per_kb; // 256 = 256*32=8192 satoshi per byte
     }
 
+    // validate satoshis to int
+    addresses.map(function(to_address, index) {
+        if (typeof to_address.satoshis != 'number') {
+            return res.json({ err: 'The value of satoshis should be number' });
+        }
+    });
+
     var min_transaction_amount = 546;
 
     utils.getAddressFromPK(pk, function(err, addr) {
@@ -105,7 +112,7 @@ exports.sendmany = function(req, res) {
                                     for (var i = 0; i < addresses.length; i++) {
                                         var address_item = addresses[i];
                                         transaction.to(address_item.to_address, parseInt(address_item.satoshis))
-                                        total_output += address_item.satoshis;
+                                        total_output += parseInt(address_item.satoshis);
                                     }
 
                                     //  estimate size of transaction and calculate fee
@@ -125,7 +132,7 @@ exports.sendmany = function(req, res) {
                                         }
 
                                         if (trunback > 0 && trunback < min_transaction_amount) {
-                                            return res.json({ err: 'The change amount is too small' });
+                                            return res.json({ err: 'The trunback amount is too small' });
                                         }
 
                                         console.log("trunback", total_value - total_output - fee);
