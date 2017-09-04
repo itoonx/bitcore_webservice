@@ -10,7 +10,7 @@ exports.sendmany_description = function(req, res) {
         "Method": "POST",
         "url": "http://this_ip_you_access_the_api.com:" + config.port + "/sendmany",
         params: {
-            "boadcast": "(true|false) the default is false",
+            "boardcast": "(true|false) the default is false",
             "pk": "Private Key",
             addresses: [{
                     "to_address": "To Address 1",
@@ -72,13 +72,17 @@ function toAddressValidator(addresses, callback) {
 
 exports.sendmany = function(req, res) {
 
-    var boadcast = (boadcast ? true : req.body.boadcast);
-    if (req.body.boadcast === undefined) {
-        var boadcast = false;
-    } else if (req.body.boadcast === 'false' || req.body.boadcast === "false") {
-        var boadcast = false;
-    } else if (req.body.boadcast === 'true' || req.body.boadcast === "true") {
-        var boadcast = true;
+    if (process.env.NODE_ENV == 'development') {
+        console.log(req.body);
+    }
+
+    var boardcast = (boardcast ? true : req.body.boardcast);
+    if (req.body.boardcast === undefined) {
+        var boardcast = false;
+    } else if (req.body.boardcast === 'false' || req.body.boardcast === "false") {
+        var boardcast = false;
+    } else if (req.body.boardcast === 'true' || req.body.boardcast === "true") {
+        var boardcast = true;
     }
 
     var pk = req.body.pk;
@@ -183,7 +187,7 @@ exports.sendmany = function(req, res) {
                                                 return res.json({ err: 'serialize transaction has failed' });
                                             } else {
 
-                                                if (boadcast) {
+                                                if (boardcast) {
 
                                                     /** warning for sensitive case -- ensure you want to push the transaction to network */
 
