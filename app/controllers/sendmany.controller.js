@@ -76,9 +76,9 @@ exports.sendmany = function(req, res) {
     if (req.body.boadcast === undefined) {
         var boadcast = false;
     } else if (req.body.boadcast === 'false' || req.body.boadcast === "false") {
-        var boadcast = false
+        var boadcast = false;
     } else if (req.body.boadcast === 'true' || req.body.boadcast === "true") {
-
+        var boadcast = true;
     }
 
     var pk = req.body.pk;
