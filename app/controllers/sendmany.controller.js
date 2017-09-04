@@ -104,7 +104,7 @@ exports.sendmany = function(req, res) {
                                     var total_output = 0;
                                     for (var i = 0; i < addresses.length; i++) {
                                         var address_item = addresses[i];
-                                        transaction.to(address_item.to_address, address_item.satoshis)
+                                        transaction.to(address_item.to_address, parseInt(address_item.satoshis))
                                         total_output += address_item.satoshis;
                                     }
 
