@@ -1,0 +1,6 @@
+{
+    "fullnode_url": "https://localbitcoinschain.com/api",
+    "port": 7777,
+    "default_fee": 81000,
+    "fee_per_kb": 71050
+}

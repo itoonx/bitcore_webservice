@@ -1,0 +1,12 @@
+{
+  "name": "bitcoreAPI",
+  "version": "1.0.0",
+  "dependencies": {
+    "bitcore-explorers": "^1.0.1",
+    "bitcore-lib": "^0.13.19",
+    "body-parser": "~1.13.0",
+    "compression": "~1.5.0",
+    "express": "^4.13.4",
+    "morgan": "~1.6.0"
+  }
+}
