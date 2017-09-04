@@ -48,14 +48,37 @@ function estimateFeeByTransaction(transaction, fee_per_kb, callback) {
     callback(null, fee);
 }
 
+function toAddressValidator(addresses, callback) {
+
+    // Validate to address parameter
+    if (addresses) {
+        addresses.map(function(to_address, index) {
+
+            if (to_address.satoshis === undefined || to_address.satoshis == '' || to_address == null) {
+                callback('Please input the parameter [satoshis] amount, error by key ' + (index + 1), null);
+            }
+
+            if (typeof to_address.satoshis != 'number') {
+                callback('The value of satoshis should be number', null);
+            }
+
+            if (addresses.length === index + 1) {
+                callback(null, true);
+            }
+
+        });
+    }
+}
+
 exports.sendmany = function(req, res) {
 
-    // set parametor
     var boadcast = (boadcast ? true : req.body.boadcast);
     if (req.body.boadcast === undefined) {
         var boadcast = false;
-    } else if (req.body.boadcast === 'false') {
+    } else if (req.body.boadcast === 'false' || req.body.boadcast === "false") {
         var boadcast = false
+    } else if (req.body.boadcast === 'true' || req.body.boadcast === "true") {
+
     }
 
     var pk = req.body.pk;
@@ -78,127 +101,130 @@ exports.sendmany = function(req, res) {
         fee_per_kb = config.fee_per_kb; // 256 = 256*32=8192 satoshi per byte
     }
 
-    // validate satoshis to int
-    if (addresses) {
-        addresses.map(function(to_address, index) {
-            if (typeof to_address.satoshis != 'number') {
-                return res.json({ err: 'The value of satoshis should be number' });
-            }
-        });
-    }
-
     var min_transaction_amount = 546;
 
-    utils.getAddressFromPK(pk, function(err, addr) {
-        if (addr) {
+    toAddressValidator(addresses, function(err, result) {
+        if (err) return res.json({ err: err });
 
-            // create custome url for your own node, default is bitpay node
-            var client = new explorers.Insight();
-            client.getUnspentUtxos(addr, function(err, utxos) {
-                if (err) {
-                    return res.json({ err: 'Not found unspent transaction !' });
-                } else {
-                    if (utxos) {
-                        utils.getTotalUnspent(utxos, function(err, balance) {
+        utils.getAddressFromPK(pk, function(err, addr) {
+            if (addr) {
 
-                            countSatoshis(addresses, function(err, satoshis_pending) {
-                                if (!err) {
+                // create custome url for your own node, default is bitpay node
+                var client = new explorers.Insight();
 
-                                    // create transaction
-                                    var transaction = new bitcore.Transaction();
-                                    transaction.from(utxos);
+                // get unspent transaction
+                client.getUnspentUtxos(addr, function(err, utxos) {
 
-                                    // total value
-                                    var total_value = balance;
+                    console.log("unspent", utxos);
 
-                                    // total output
-                                    var total_output = 0;
-                                    for (var i = 0; i < addresses.length; i++) {
-                                        var address_item = addresses[i];
-                                        transaction.to(address_item.to_address, parseInt(address_item.satoshis))
-                                        total_output += parseInt(address_item.satoshis);
-                                    }
+                    if (err) {
+                        return res.json({ err: 'Not found unspent transaction !', message: err });
+                    } else {
 
-                                    //  estimate size of transaction and calculate fee
-                                    estimateFeeByTransaction(transaction, fee_per_kb, function(err, fee) {
-                                        if (err) return res.json({ err: err });
+                        if (utxos) {
 
-                                        // trunback balance
-                                        var trunback = balance - satoshis_pending;
+                            // get total unspent
+                            utils.getTotalUnspent(utxos, function(err, balance) {
 
-                                        console.log("total_output", total_output);
-                                        console.log("total_value", total_value);
-                                        console.log("fee", fee);
+                                // sum satoshis output
+                                countSatoshis(addresses, function(err, satoshis_pending) {
+                                    if (!err) {
 
+                                        // create raw transaction
+                                        var transaction = new bitcore.Transaction();
+                                        transaction.from(utxos);
 
-                                        if (total_value < total_output + fee) {
-                                            return res.json({ err: 'Not enough for create transaction' });
+                                        // total value
+                                        var total_value = balance;
+
+                                        // total output
+                                        var total_output = 0;
+                                        for (var i = 0; i < addresses.length; i++) {
+                                            var address_item = addresses[i];
+                                            transaction.to(address_item.to_address, parseInt(address_item.satoshis))
+                                            total_output += parseInt(address_item.satoshis);
                                         }
 
-                                        if (trunback > 0 && trunback < min_transaction_amount) {
-                                            return res.json({ err: 'The trunback amount is too small' });
-                                        }
+                                        //  estimate size of transaction and calculate fee
+                                        estimateFeeByTransaction(transaction, fee_per_kb, function(err, fee) {
+                                            if (err) return res.json({ err: err });
 
-                                        console.log("trunback", total_value - total_output - fee);
+                                            // trunback balance
+                                            var trunback = balance - satoshis_pending;
 
-                                        transaction.fee(fee);
-                                        if (trunback > 0) {
-                                            transaction.change(addr);
-                                        }
+                                            console.log("total_output", total_output);
+                                            console.log("total_value", total_value);
+                                            console.log("fee", fee);
 
-                                        transaction.enableRBF()
-                                            .sign(pk);
-
-                                        var tx_hex = transaction.serialize();
-
-                                        console.log("tx_hex", tx_hex);
-                                        /*console.log( JSON.stringify(transaction.toObject()), "end");*/
-
-                                        if (!tx_hex) {
-                                            return res.json({ err: 'Not found sign by decode raw transaction' });
-                                        } else {
-
-                                            if (boadcast) {
-
-                                                client.broadcast(transaction.serialize(), function(err, id) {
-                                                    if (err) {
-
-                                                        console.log('tx boardcast error ' + err);
-                                                        return res.json({ err: 'transaction boardcast error', message: err });
-
-                                                    } else {
-
-                                                        console.log('sending bitcoin success : ' + transaction);
-                                                        res.json({
-                                                            "from_address": addr,
-                                                            "to_address": addresses,
-                                                            "total_input": total_value,
-                                                            "total_output": total_output,
-                                                            "trunback": trunback,
-                                                            "fee": fee,
-                                                            "transaction": transaction,
-                                                        });
-                                                    }
-                                                });
-
-                                            } else {
-                                                return res.json({ transaction: transaction.serialize() }).status(200);
+                                            if (total_value < total_output + fee) {
+                                                return res.json({ err: 'Not enough for create transaction' });
                                             }
 
-                                        }
+                                            if (trunback > 0 && trunback < min_transaction_amount) {
+                                                return res.json({ err: 'The trunback amount is too small' });
+                                            }
 
-                                    });
+                                            console.log("trunback", total_value - total_output - fee);
 
-                                }
+                                            transaction.fee(fee);
+                                            if (trunback > 0) {
+                                                transaction.change(addr);
+                                            }
+
+                                            transaction.enableRBF()
+                                                .sign(pk);
+
+                                            var tx_hex = transaction.serialize();
+
+                                            console.log("tx_hex", tx_hex);
+                                            /*console.log( JSON.stringify(transaction.toObject()), "end");*/
+
+                                            if (!tx_hex) {
+                                                return res.json({ err: 'serialize transaction has failed' });
+                                            } else {
+
+                                                if (boadcast) {
+
+                                                    /** warning for sensitive case -- ensure you want to push the transaction to network */
+
+                                                    client.broadcast(transaction.serialize(), function(err, id) {
+                                                        if (err) {
+                                                            console.log('tx boardcast error ' + err);
+                                                            return res.json({ err: 'transaction boardcast error', message: err });
+                                                        } else {
+                                                            console.log('sending bitcoin success : ' + transaction);
+                                                            res.json({
+                                                                "from_address": addr,
+                                                                "to_address": addresses,
+                                                                "total_input": total_value,
+                                                                "total_output": total_output,
+                                                                "trunback": trunback,
+                                                                "fee": fee,
+                                                                "transaction": transaction,
+                                                            });
+                                                        }
+                                                    });
+
+                                                } else {
+                                                    return res.json({ transaction: transaction.serialize() }).status(200);
+                                                }
+
+                                            }
+
+                                        });
+
+                                    }
+                                });
+
                             });
 
-
-                        });
+                        } else {
+                            return res.json({ err: 'Not have unspent transaction' });
+                        }
                     }
-                }
-            });
-        }
+                });
+            }
+        });
+
     });
-
-
 };
