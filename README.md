@@ -23,7 +23,7 @@ Generate Address
 
 Send by private key to single address
 - [POST] - localhost:7777/send
-Params :
+
 ```
  "boardcast": "(true|false) the default is false",
   "pk": "Private Key",
@@ -45,7 +45,7 @@ Params :
 
 Send by private key to multiple address
 - [POST] - localhost:7777/sendmany
-Params :
+
 ```
  "boadcast": "(true|false) the default is true",
   "pk": "Private Key",
