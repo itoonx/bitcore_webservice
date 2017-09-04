@@ -10,7 +10,7 @@ exports.sendmany_description = function(req, res) {
         "Method": "POST",
         "url": "http://this_ip_you_access_the_api.com:" + config.port + "/sendmany",
         params: {
-            "boadcast": "(true|false) the default is true",
+            "boadcast": "(true|false) the default is false",
             "pk": "Private Key",
             addresses: [{
                     "to_address": "To Address 1",
@@ -53,7 +53,9 @@ exports.sendmany = function(req, res) {
     // set parametor
     var boadcast = (boadcast ? true : req.body.boadcast);
     if (req.body.boadcast === undefined) {
-        var boadcast = true;
+        var boadcast = false;
+    } else if (req.body.boadcast === 'false') {
+        var boadcast = false
     }
 
     var pk = req.body.pk;
@@ -77,11 +79,13 @@ exports.sendmany = function(req, res) {
     }
 
     // validate satoshis to int
-    addresses.map(function(to_address, index) {
-        if (typeof to_address.satoshis != 'number') {
-            return res.json({ err: 'The value of satoshis should be number' });
-        }
-    });
+    if (addresses) {
+        addresses.map(function(to_address, index) {
+            if (typeof to_address.satoshis != 'number') {
+                return res.json({ err: 'The value of satoshis should be number' });
+            }
+        });
+    }
 
     var min_transaction_amount = 546;
 
