@@ -25,7 +25,7 @@ exports.sendmany_description = function(req, res) {
                     "satoshis": 3333
                 }
             ],
-            "fee_per_kb": "Default is " + config.fee_per_kb + " satoshis / byte (Math.floor(fee_per_kb * transaction._estimateSize() / 1024))"
+            "fee_per_kb": "Default is " + config.fee_per_kb + " satoshis / kByte (Math.floor(fee_per_kb * transaction._estimateSize() / 1024))"
         }
     };
 
