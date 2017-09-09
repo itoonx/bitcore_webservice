@@ -25,6 +25,17 @@ Send by private key to single address
 - [POST] - localhost:7777/send
 
 ```
+"boadcast": "(true|false) the default is true",
+  "pk": "Private Key",
+  "to_address": "To Address",
+  "satoshis": "Default is all unspent, mininum satoshis is 10000 satoshis",
+  "fee": "Default is 10000 satoshis"
+```
+
+Send by private key to multiple address
+- [POST] - localhost:7777/sendmany
+
+```
  "boardcast": "(true|false) the default is false",
   "pk": "Private Key",
   addresses: [{
@@ -40,18 +51,7 @@ Send by private key to single address
           "satoshis": 3333
       }
   ],
-  "fee_per_kb": "Default is " + config.fee_per_kb + " satoshis / kByte (Math.floor(fee_per_kb * transaction._estimateSize() / 1024))"
-```
-
-Send by private key to multiple address
-- [POST] - localhost:7777/sendmany
-
-```
- "boadcast": "(true|false) the default is true",
-  "pk": "Private Key",
-  "to_address": "To Address",
-  "satoshis": "Default is all unspent, mininum satoshis is 10000 satoshis",
-  "fee": "Default is 10000 satoshis"
+  "fee_per_kb": "Default is " + 7820 + " satoshis / kByte (Math.floor(fee_per_kb * transaction._estimateSize() / 1024))"
 ```
 
 Please follow instuction in the API description
